@@ -53,6 +53,7 @@ function dishExists(req, res, next) {
     const foundDish = dishes.find((dish) => dishId == dish.id);
     if (foundDish) {
         res.locals.dish = foundDish;
+        res.locals.dishId = dishId;
         return next();
     };
     next({
@@ -62,20 +63,16 @@ function dishExists(req, res, next) {
 };
  
 function idBodyRouteMatch(req, res, next) {
-    const {dishId} = req.params;
-    const {data: {id}} = req.body;
 
-    if (!id || id == dishId) return next();
+    if (!res.locals.id || res.locals.id == res.locals.dishId) return next();
     
-    if (id != dishId) {
+    if (res.locals.id != res.locals.dishId) {
         return next({
             status: 400,
-            message: `Dish id does not match route id. Dish: ${id}, Route: ${dishId}`
+            message: `Dish id does not match route id. Dish: ${res.locals.id}, Route: ${res.locals.dishId}`
         })
     };
-
-    
-}
+};
 
 function list(req, res, next) {
     res.json({data: dishes})
