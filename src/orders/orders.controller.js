@@ -56,6 +56,7 @@ function orderExists(req, res, next) {
     const foundOrder = orders.find((order) => order.id == orderId);
     if (foundOrder) {
         res.locals.order = foundOrder;
+        res.locals.orderId = orderId;
         next();
     }
     next({
@@ -65,43 +66,38 @@ function orderExists(req, res, next) {
 };
 
 function idBodyRouteMatch(req, res, next) {
-    const {orderId} = req.params;
-    const {data: {id}} = req.body;
 
-    if (!id || id == orderId) return next();
+    if (!res.locals.id || res.locals.id == res.locals.orderId) return next();
 
-    if (id != orderId) {
+    if (res.locals.id != res.locals.orderId) {
         return next({
             status: 400,
-            message: `Order id does not match route id. Order: ${id}, Route: ${orderId}.`
+            message: `Order id does not match route id. Order: ${res.locals.id}, Route: ${res.locals.orderId}.`
         })
     }
     next();
 };
 
 function orderStatusChecker(req, res, next) {
-    const {data: {status = ""}} = req.body;
     const statusList = ["pending", "preparing", "out-for-delivery", "delivered"];
 
-    if(!status || status == "" || !statusList.includes(status)) {
+    if(!res.locals.status || res.locals.status == "" || !statusList.includes(res.locals.status)) {
         return next({
             status: 400,
             message: "Order must have a status of pending, preparing, out-for-delivery, delivered"
         })
     };
 
-    if(status === "delivered") {
+    if(res.locals.status === "delivered") {
         return next({
             status: 404,
             message: "A delivered order cannot be changed"
         })
     };
-    res.locals.status = status;
     next();
 };
 
 function statusPending(req, res, next) {
-    const {orderId} = req.params;
     if (res.locals.order.status !== "pending") {
         return next({
             status: 400,
@@ -134,7 +130,7 @@ function read(req, res, next) {
 
 function update(req, res, next) {
     let order = res.locals.order;
-    
+
     order = {
         ...order,
         deliverTo: res.locals.deliverTo,
@@ -147,8 +143,7 @@ function update(req, res, next) {
 };
 
 function destroy(req, res, next) {
-    const {orderId} = req.params;
-    const index = orders.indexOf((order) => order.id == orderId);
+    const index = orders.indexOf((order) => order.id == res.locals.order.id);
     orders.splice(index, 1);
 
     res.sendStatus(204);
